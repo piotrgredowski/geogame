@@ -1,0 +1,40 @@
+<html>
+
+<head>
+    <title>GeoGame</title>
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+</head>
+
+<body>
+    <h1>Game {{id}}</h1>
+
+    <h2>Selected options</h2>
+    <ul>
+        <li>Level: {{level}}, cities with more than {{ '{:,}'.format(level_population)}} people</li>
+        <li>Timezone: {{timezone}}</li>
+        <li>Randomly selected country: <b>{{country}}</b>
+    </ul>
+
+    <h3>Cities</h3>
+    <table class="cities-container">
+        <tr>
+            <th></th>
+            <th>City</th>
+            <th>Population</th>
+        </tr>
+        {% for city in cities %}
+            <tr>
+                <td>{{loop.index }}</td>
+                {% if loop.index == index_to_find %}
+                    <td><input type="text" placeholder="???"></input></td>
+                {% else %}
+                    <td>{{city.name}}</td>
+                {% endif %}
+
+                <td class="number">{{ '{:,}'.format(city.population)}}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>

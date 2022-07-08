@@ -1,0 +1,13 @@
+h1 {
+    color: green;
+}
+
+.number {
+    font-family: Courier,
+        "Lucida Console",
+        monospace
+}
+
+table .number {
+    text-align: right;
+}
