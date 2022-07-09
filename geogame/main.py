@@ -2,10 +2,11 @@ import logging
 from dataclasses import dataclass
 from enum import Enum
 from sqlite3 import Connection
-from typing import cast
+from typing import Any, Dict, cast
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, Request
+from fast_autocomplete import AutoComplete
+from fastapi import Depends, FastAPI, Request, WebSocket
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -79,6 +80,32 @@ async def get_game_options(request: Request, db: Connection = Depends(get_db)):
             "levels": Levels,
         },
     )
+
+
+_cities_cache: Dict[str, Any] = {}
+
+
+def get_cities_for_search(db: Connection):
+    global _cities_cache
+    if not _cities_cache:
+        q = """select distinct name from cities"""
+        _cities_cache = {
+            c["name"]: {} for c in convert_results(db.cursor().execute(q).fetchall())
+        }
+    return _cities_cache
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(
+    websocket: WebSocket,
+    db: Connection = Depends(get_db),
+):
+    await websocket.accept()
+    autocomplete = AutoComplete(words=get_cities_for_search(db))
+    while True:
+        data = await websocket.receive_text()
+        results = autocomplete.search(word=data, max_cost=3, size=5)
+        await websocket.send_json(results)
 
 
 @app.get("/game/start", response_class=HTMLResponse)

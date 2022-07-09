@@ -57,7 +57,15 @@
             <tr>
                 <td>{{loop.index }}</td>
                 {% if loop.index == index_to_find %}
-                    <td><input type="text" placeholder="???" title="{{city.name}}"></input></td>
+                    <td>
+                        <form autocomplete="off">
+                            <input type="text" name="q" id="q" onKeyUp="sendQ(this.value)" placeholder="???" title="{{city.name}}"></input>
+                            <div>
+                                <ul id="results">
+                                </ul>
+                            </div>
+                        </form>
+                    </td>
                 {% else %}
                     <td>{{city.name}}</td>
                 {% endif %}
@@ -69,6 +77,14 @@
     </table>
 
     <div id="map"></div>
+
+    <h1>WebSocket Chat</h1>
+    <form action="" onsubmit="sendMessage(event)">
+        <input type="text" id="messageText" autocomplete="off"/>
+        <button>Send</button>
+    </form>
+    <ul id='messages'>
+    </ul>
 
     <script>
     L.NumberedDivIcon = L.Icon.extend({
@@ -108,6 +124,8 @@
 
 
     const map = L.map('map', {zoomControl: false}).setView([51.505, -0.09], 13);
+    //L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}.png', {
+    //L.tileLayer('https://tile.tracestrack.com/bicycle-route/${z}/${x}/${y}.png', {
     L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
     //L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
@@ -132,6 +150,61 @@
 
     map.zoomOut()
 
+    const ws = new WebSocket("ws://localhost:8000/ws");
+
+    function sendQ(query) {
+        ws.send(query)
+    }
+
+    ws.onopen = () => console.log("WS opened")
+    ws.onmessage = function(event) {
+        // var messages = document.getElementById("results");
+        // var message = document.createElement('li')
+        // var content = document.createTextNode(event.data)
+        // message.appendChild(content)
+        // messages.appendChild(message)
+
+        console.log(event.data)
+        //let res = document.querySelector("#results");
+        //console.log(res)
+        //res.
+        //res.innerHTML = '';
+        //let list = '';
+        let terms = JSON.parse(event.data);
+        console.log(terms)
+        const ul = document.getElementById("results")
+        ul.innerHTML = ''
+        terms.map(term => {
+            const li = document.createElement('li')
+            const content = document.createTextNode(term.join(" "))
+
+            li.appendChild(content)
+            ul.appendChild(li)
+
+
+        })
+        //res.innerHTML = '<ul>' + list + '</ul>';
+    };
+    //function sendMessage(event) {
+    //    var input = document.getElementById("messageText")
+    //    ws.send(input.value)
+    //    input.value = ''
+    //    event.preventDefault()
+    //}
+
+
+
+
+    function showResults(val) {
+        res = document.getElementById("result");
+        res.innerHTML = '';
+        let list = '';
+        let terms = autocompleteMatch(val);
+        for (i=0; i<terms.length; i++) {
+            list += '<li>' + terms[i] + '</li>';
+        }
+        res.innerHTML = '<ul>' + list + '</ul>';
+    }
     </script>
 </body>
 
