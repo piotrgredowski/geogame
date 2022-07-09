@@ -3,6 +3,37 @@
 <head>
     <title>GeoGame</title>
     <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"
+        integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ=="
+        crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"
+        integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ=="
+        crossorigin=""></script>
+    <style>
+    #map { height: 400px; width: 400px }
+
+    .leaflet-div-icon {
+        background: transparent;
+        border: none;
+    }
+
+    .leaflet-marker-icon .number {
+        position: relative;
+        top: -33px;
+        font-size: 12px;
+        width: 22px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .dot {
+        height: 25px;
+        width: 25px;
+        background-color: #bbb;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    </style>
 </head>
 
 <body>
@@ -26,15 +57,82 @@
             <tr>
                 <td>{{loop.index }}</td>
                 {% if loop.index == index_to_find %}
-                    <td><input type="text" placeholder="???"></input></td>
+                    <td><input type="text" placeholder="???" title="{{city.name}}"></input></td>
                 {% else %}
                     <td>{{city.name}}</td>
                 {% endif %}
 
                 <td class="number">{{ '{:,}'.format(city.population)}}</td>
+                <td style="text-align: center"><span class="dot" style="height: {{100 * city.dot_size}}px; width: {{100 * city.dot_size}}px"></span></td>
             </tr>
         {% endfor %}
     </table>
+
+    <div id="map"></div>
+
+    <script>
+    L.NumberedDivIcon = L.Icon.extend({
+        options: {
+        // EDIT THIS TO POINT TO THE FILE AT http://www.charliecroom.com/marker_hole.png (or your own marker)
+        iconUrl: '/static/marker24x32.png',
+        number: '',
+        shadowUrl: null,
+        iconSize: new L.Point(25, 41),
+        // iconAnchor: new L.Point(0, 0),
+        iconAnchor: new L.Point(13, 41),
+        popupAnchor: new L.Point(0, -33),
+        /*
+        iconAnchor: (Point)
+        popupAnchor: (Point)
+        */
+        className: 'leaflet-div-icon'
+        },
+
+        createIcon: function () {
+            var div = document.createElement('div');
+            var img = this._createImg(this.options['iconUrl']);
+            var numdiv = document.createElement('div');
+            numdiv.setAttribute ( "class", "number" );
+            numdiv.innerHTML = this.options['number'] || '';
+            div.appendChild ( img );
+            div.appendChild ( numdiv );
+            this._setIconStyles(div, 'icon');
+            return div;
+        },
+
+        //you could change this to add a shadow like in the normal marker if you really wanted
+        createShadow: function () {
+            return null;
+        }
+    });
+
+
+    const map = L.map('map', {zoomControl: false}).setView([51.505, -0.09], 13);
+    L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
+    //L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        //attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+
+    const markers = [
+    {% for city in cities %}
+        [{{city.coordinates[0]}}, {{city.coordinates[1]}}],
+    {% endfor %}
+    ]
+
+    markers.forEach((coords, idx) => {
+        L.marker(coords, {
+            icon: new L.NumberedDivIcon({number: idx + 1})
+        }).addTo(map);
+    })
+
+    var bounds = new L.LatLngBounds(markers);
+    map.fitBounds(bounds);
+
+    map.zoomOut()
+
+    </script>
 </body>
 
 </html>

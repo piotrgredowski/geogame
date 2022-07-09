@@ -24,3 +24,4 @@ class CityInDb:
     modification_date: str
     label_en: str
     coordinates: str
+    dot_size: float

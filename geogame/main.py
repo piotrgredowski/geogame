@@ -127,7 +127,18 @@ async def get_game(
         .fetchall()
     )
 
-    cities = [CityInDb(**c) for c in cities]
+    max_pop = max(c["population"] for c in cities)
+
+    cities = [
+        CityInDb(
+            **{
+                **c,
+                "coordinates": c["coordinates"].split(","),
+                "dot_size": c["population"] / max_pop,
+            }
+        )
+        for c in cities
+    ]
 
     index_to_find = random.randint(1, cities_count)
 
