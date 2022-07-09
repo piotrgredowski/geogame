@@ -1,6 +1,10 @@
 # GeoGame
 
-That will be a simple game in which player should fill a name with city in the list of
+## [Play](https://geogame.bieda.it/)
+
+**WIP**
+
+Simple game in which player should fill a name with city in the list of
 cities which are most populated in each country.
 
 ## Todos:

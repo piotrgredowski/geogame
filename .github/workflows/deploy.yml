@@ -7,18 +7,71 @@ on:
 name: Deploy
 
 jobs:
+  # deployment:
+  #   runs-on: ubuntu-latest
+  #   environment: PROD
+
+  #   steps:
+  #     - uses: actions/checkout@v1
+
+  #     - name: Executing remote command
+  #       uses: garygrossgarten/github-action-ssh@release
+  #       with:
+  #         host: ${{ secrets.HOST }}
+  #         username: ${{ secrets.USERNAME }}
+  #         port: ${{ secrets.PORT }}
+  #         privateKey: ${{ secrets.SSHKEY }}
+  #         command: |
+  #           zsh
+  #           source ~/.zshrc
+  #           cd ~/Coding/geogame
+  #           git fetch
+  #           git reset --hard origin/main || true
+  #           source .venv/bin/activate
+  #           poetry lock --no-update
+  #           poetry install --only main || true
+  #           pkill -9 -f uvicorn
+  #           poetry shell || true
+  #           cd geogame
+  #           uvicorn main:app --port 8000 &
   deployment:
+    # https://blog.benoitblanchon.fr/github-action-run-ssh-commands/
+    name: 'Deploy to PROD'
     runs-on: ubuntu-latest
     environment: PROD
-
     steps:
-      - uses: actions/checkout@v1
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_KEY" > ~/.ssh/production.key
+          chmod 600 ~/.ssh/production.key
+          cat >>~/.ssh/config <<END
+          Host production
+            HostName $SSH_HOST
+            User $SSH_USER
+            Port $SSH_PORT
+            IdentityFile ~/.ssh/production.key
+            StrictHostKeyChecking no
+          END
+        env:
+          SSH_USER: ${{ secrets.USERNAME }}
+          SSH_KEY: ${{ secrets.SSHKEY }}
+          SSH_HOST: ${{ secrets.HOST }}
+          SSH_PORT: ${{ secrets.PORT }}
 
-      - name: Executing remote command
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.HOST }}
-          USERNAME: ${{ secrets.USERNAME }}
-          PORT: ${{ secrets.PORT }}
-          KEY: ${{ secrets.SSHKEY }}
-          script: ls
+      - name: Stop the server
+        run: |
+          ssh production 'pkill -9 -f uvicorn || true'
+
+      - name: Start the server
+        if: ${{ always() }}
+        run: |
+          ssh production 'source ~/.zshrc && \
+                          cd ~/Coding/geogame && \
+                          git fetch && \
+                          git reset --hard origin/main && \
+                          source .venv/bin/activate && \
+                          poetry lock --no-update || true && \
+                          poetry install --only main && \
+                          cd geogame && \
+                          uvicorn main:app --port 8000 &'
