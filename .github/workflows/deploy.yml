@@ -59,19 +59,19 @@ jobs:
           SSH_HOST: ${{ secrets.HOST }}
           SSH_PORT: ${{ secrets.PORT }}
 
-      - name: Stop the server
-        run: |
-          ssh production 'pkill -9 -f uvicorn || true'
-
-      - name: Start the server
+      - name: Reset to latest main
         if: ${{ always() }}
         run: |
-          ssh production 'source ~/.zshrc && \
-                          cd ~/Coding/geogame && \
-                          git fetch && \
-                          git reset --hard origin/main && \
-                          source .venv/bin/activate && \
-                          poetry lock --no-update || true && \
-                          poetry install --only main && \
-                          cd geogame && \
-                          uvicorn main:app --port 8000 &'
+          ssh production 'cd ~/Coding/geogame && git fetch && git reset --hard origin/main'
+
+      - name: Build image
+        run: |
+          ssh production 'cd ~/Coding/geogame && docker build . -t geogame'
+
+      - name: Stop containers
+        run: |
+          ssh production 'docker ps -q --filter ancestor="geogame" | xargs -r docker stop'
+
+      - name: Start container
+        run: |
+          ssh production 'docker run -it -d --net=host geogame'
