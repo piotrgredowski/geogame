@@ -78,14 +78,6 @@
 
     <div id="map"></div>
 
-    <h1>WebSocket Chat</h1>
-    <form action="" onsubmit="sendMessage(event)">
-        <input type="text" id="messageText" autocomplete="off"/>
-        <button>Send</button>
-    </form>
-    <ul id='messages'>
-    </ul>
-
     <script>
     L.NumberedDivIcon = L.Icon.extend({
         options: {
@@ -158,20 +150,7 @@
 
     ws.onopen = () => console.log("WS opened")
     ws.onmessage = function(event) {
-        // var messages = document.getElementById("results");
-        // var message = document.createElement('li')
-        // var content = document.createTextNode(event.data)
-        // message.appendChild(content)
-        // messages.appendChild(message)
-
-        console.log(event.data)
-        //let res = document.querySelector("#results");
-        //console.log(res)
-        //res.
-        //res.innerHTML = '';
-        //let list = '';
         let terms = JSON.parse(event.data);
-        console.log(terms)
         const ul = document.getElementById("results")
         ul.innerHTML = ''
         terms.map(term => {
@@ -180,31 +159,9 @@
 
             li.appendChild(content)
             ul.appendChild(li)
-
-
         })
-        //res.innerHTML = '<ul>' + list + '</ul>';
     };
-    //function sendMessage(event) {
-    //    var input = document.getElementById("messageText")
-    //    ws.send(input.value)
-    //    input.value = ''
-    //    event.preventDefault()
-    //}
 
-
-
-
-    function showResults(val) {
-        res = document.getElementById("result");
-        res.innerHTML = '';
-        let list = '';
-        let terms = autocompleteMatch(val);
-        for (i=0; i<terms.length; i++) {
-            list += '<li>' + terms[i] + '</li>';
-        }
-        res.innerHTML = '<ul>' + list + '</ul>';
-    }
     </script>
 </body>
 
