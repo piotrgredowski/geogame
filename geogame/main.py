@@ -5,6 +5,7 @@ from sqlite3 import Connection
 from typing import Any, Dict, cast
 from uuid import uuid4
 
+import fuzzdex
 from fast_autocomplete import AutoComplete
 from fastapi import Depends, FastAPI, Request, WebSocket
 from fastapi.responses import HTMLResponse
@@ -95,17 +96,34 @@ def get_cities_for_search(db: Connection):
     return _cities_cache
 
 
+fuzz_cities = None
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(
     websocket: WebSocket,
     db: Connection = Depends(get_db),
 ):
-    await websocket.accept()
-    autocomplete = AutoComplete(words=get_cities_for_search(db))
     while True:
-        data = await websocket.receive_text()
-        results = autocomplete.search(word=data, max_cost=3, size=5)
-        await websocket.send_json(results)
+        try:
+            await websocket.accept()
+            autocomplete = AutoComplete(words=get_cities_for_search(db))
+            global fuzz_cities
+            if not fuzz_cities:
+                fuzz_cities = fuzzdex.FuzzDex()
+                for idx, city in enumerate(get_cities_for_search(db).keys()):
+                    fuzz_cities.add_phrase(city, idx, set())
+
+            fuzz_cities.finish()
+
+            while True:
+                data = await websocket.receive_text()
+                # results = autocomplete.search(word=data, max_cost=3, size=5)
+                r = fuzz_cities.search(must=data, should=[], limit=10)
+                c = [res["origin"] for res in r]
+                await websocket.send_json(c)
+        except:
+            continue
 
 
 @app.get("/game/start", response_class=HTMLResponse)

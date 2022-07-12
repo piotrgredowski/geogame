@@ -155,7 +155,7 @@
         ul.innerHTML = ''
         terms.map(term => {
             const li = document.createElement('li')
-            const content = document.createTextNode(term.join(" "))
+            const content = document.createTextNode(term)
 
             li.appendChild(content)
             ul.appendChild(li)
